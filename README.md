@@ -9,7 +9,7 @@
   <img width="800" height="auto" src="https://github.com/thorvg/thorvg.site/blob/main/readme/logo/512/thorvg-banner.png">
 </p
 
-ThorVG for Swift is a lightweight wrapper around the [ThorVG C++ API](https://github.com/thorvg/thorvg), providing native support for vector graphics in Swift applications. This package currently only supports rendering Lottie animations and is actively evolving to include more features.
+ThorVG for Swift is a lightweight wrapper around the [ThorVG C++ API](https://github.com/thorvg/thorvg), providing native support for vector graphics in Swift applications. This package supports rendering **Lottie animations** and **SVG images**, and is actively evolving to include more features.
 
 **ThorVG Version:** `v0.14.7` (commit `e3a6bf`)   
 **Supported Platforms:** iOS 13.0+, macOS 10.15+
@@ -17,8 +17,12 @@ ThorVG for Swift is a lightweight wrapper around the [ThorVG C++ API](https://gi
 ## Contents
 - [Installation](#installation)
 - [Usage](#usage)
-  - [Low-Level API (Direct Rendering)](#low-level-api-direct-rendering)
-  - [High-Level Views API (SwiftUI & UIKit)](#high-level-views-api-swiftui--uikit)
+  - [Lottie Animations](#lottie-animations)
+    - [Low-Level API (Direct Rendering)](#low-level-api-direct-rendering)
+    - [High-Level Views API (SwiftUI & UIKit)](#high-level-views-api-swiftui--uikit)
+  - [SVG Images](#svg-images)
+    - [SVG Low-Level API](#svg-low-level-api)
+    - [SVG Views API (SwiftUI & UIKit)](#svg-views-api-swiftui--uikit)
 - [Build](#build)
 - [Contributing](#contributing)
 
@@ -33,11 +37,12 @@ dependencies: [
 ```
 
 ## Usage
-This Swift wrapper currently only supports rendering Lottie animations. As the package evolves, additional support for more content types will be added.
 
-ThorVGSwift provides two levels of API:
-1. **Low-Level API**: Direct access to the rendering engine for frame-by-frame control
-2. **High-Level Views API**: Ready-to-use SwiftUI and UIKit views with playback controls
+ThorVGSwift provides two levels of API for each supported format:
+1. **Low-Level API**: Direct access to the rendering engine for fine-grained control
+2. **High-Level Views API**: Ready-to-use SwiftUI and UIKit views
+
+### Lottie Animations
 
 ### Low-Level API (Direct Rendering)
 
@@ -203,6 +208,109 @@ The full documentation includes:
 - Configuration options and best practices
 - Complete usage examples and integration patterns
 - Testing strategies and troubleshooting guides
+
+### SVG Images
+
+ThorVGSwift also supports rendering static SVG images. The SVG API follows a simpler pattern than Lottie — no animation loop or ViewModel is needed, since SVGs are rendered in a single pass.
+
+### SVG Low-Level API
+
+The low-level SVG API gives you direct control over the rendering pipeline, producing a `CGImage` from SVG content.
+
+Load an SVG from a file path, string, or `Data`:
+
+```swift
+// From a file path
+let svg = try SVG(path: Bundle.main.path(forResource: "tiger", ofType: "svg")!)
+
+// From an SVG XML string
+let svg = try SVG(string: "<svg>...</svg>")
+
+// From Data
+let svg = try SVG(data: svgData)
+```
+
+Create an `SVGRenderer` and render the image:
+
+```swift
+let renderer = SVGRenderer(svg, size: CGSize(width: 512, height: 512))
+let image = try renderer.render(contentMode: .scaleAspectFit)
+```
+
+You can also specify a custom content rect for fine-grained control over which portion of the SVG to render:
+
+```swift
+let contentRect = CGRect(x: 0, y: 0, width: svg.size.width, height: svg.size.height)
+let image = try renderer.render(contentRect: contentRect)
+```
+
+> [!NOTE]
+> `SVGContentMode` supports three modes: `.scaleAspectFit` (default), `.scaleAspectFill`, and `.stretch`.
+
+### SVG Views API (SwiftUI & UIKit)
+
+For most use cases, the SVG Views API provides simple components that handle rendering automatically.
+
+#### SwiftUI
+
+```swift
+import SwiftUI
+import ThorVGSwift
+
+struct ContentView: View {
+    var body: some View {
+        let svg = try! SVG(path: Bundle.main.path(forResource: "tiger", ofType: "svg")!)
+
+        SVGView(svg: svg)
+            .frame(width: 300, height: 300)
+    }
+}
+```
+
+You can customize the content mode and rendering size:
+
+```swift
+// Aspect fill with a fixed render size
+SVGView(svg: svg, contentMode: .scaleAspectFill, size: CGSize(width: 512, height: 512))
+    .frame(width: 200, height: 300)
+```
+
+#### UIKit
+
+```swift
+import UIKit
+import ThorVGSwift
+
+class ViewController: UIViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        let svg = try! SVG(path: Bundle.main.path(forResource: "tiger", ofType: "svg")!)
+        let svgView = SVGUIKitView(svg: svg, contentMode: .scaleAspectFit)
+
+        // Observe rendering errors
+        svgView.onError = { error in
+            print("SVG rendering error: \(error)")
+        }
+
+        view.addSubview(svgView)
+        // Add constraints...
+    }
+}
+```
+
+#### SVG Features
+
+The SVG API provides:
+- ✅ **Multiple Loading Methods**: Load from file path, SVG string, or raw `Data`
+- ✅ **Content Modes**: Aspect fit, aspect fill, and stretch scaling options
+- ✅ **Intrinsic Size**: Access SVG dimensions via the `size` property
+- ✅ **SwiftUI & UIKit**: Native view components for both frameworks
+- ✅ **Single-Pass Rendering**: Efficient one-shot rendering with CGContext caching
+- ✅ **Error Handling**: Dedicated `SVGRenderingError` enum for all failure cases
+- ✅ **Demo App**: Interactive iOS app demonstrating all SVG features
+
+> **Note:** Try the **[SVGDemoApp](SVGDemoApp/)** - a standalone iOS app showcasing SVG rendering with multiple loading methods, content modes, and UIKit integration! Just open `SVGDemoApp/SVGDemoApp.xcodeproj` and run.
 
 ## Build
 
