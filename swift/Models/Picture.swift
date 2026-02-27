@@ -29,6 +29,8 @@ class Picture {
     /// Supported MIME types for loading picture data.
     enum MimeType: String {
         case lottie = "lottie"
+        case svg = "svg"
+        case svgXml = "svg+xml"
     }
 
     /// Pointer to the underlying ThorVG picture object.
